@@ -6,51 +6,54 @@ let películas = [];
 
 // Usamos fetch para obtener los datos desde la URL
 fetch("https://japceibal.github.io/japflix_api/movies-data.json")
-  .then(response => {
+  .then((response) => {
     // Si hubo un error en la respuesta (ej: 404), manejamos el error
-    if(!response.ok) {
-        throw new Error('HTTP error ' + response.status);
+    if (!response.ok) {
+      throw new Error("HTTP error " + response.status);
     }
     // Convertimos la respuesta a JSON
     return response.json();
   })
-  .then(data => {
+  .then((data) => {
     // Guardamos los datos en la variable global
     console.log("Datos de películas:", data);
     películas = data;
     console.log(`Se cargaron ${películas.length} películas`);
   })
-  .catch(error => {
+  .catch((error) => {
     // Capturamos cualquier error de red o de conversión
-    console.error('Error al obtener los datos:', error);
+    console.error("Error al obtener los datos:", error);
   });
-
 
 // 2. FUNCIÓN PARA BUSCAR PELÍCULAS
 
 // Recibe un termino (string) y filtra las películas que lo contengan
 function buscarPelículas(termino) {
-  if (!termino || termino.trim() === '') {
+  if (!termino || termino.trim() === "") {
     // Si el input está vacío, borramos la lista
-    document.getElementById('lista').innerHTML = '';
+    document.getElementById("lista").innerHTML = "";
     return;
   }
-  
+
   const terminoLower = termino.toLowerCase(); // pasamos a minúsculas para comparar
 
   // Filtramos películas por coincidencias en: título, overview o géneros
-  const películasFiltradas = películas.filter(película => { // usamos optional chaining (?.) para evitar errores si alguna propiedad no existe
-    const título = película.title?.toLowerCase() || ''; // si no existe, usamos string vacío
-    const overview = película.overview?.toLowerCase() || ''; // si no existe, usamos string vacío
-    const géneros = película.genres?.map(g => g.name?.toLowerCase()).join(' ') || ''; // unimos todos los nombres de géneros en un solo string
-    
+  const películasFiltradas = películas.filter((película) => {
+    // usamos optional chaining (?.) para evitar errores si alguna propiedad no existe
+    const título = película.title?.toLowerCase() || ""; // si no existe, usamos string vacío
+    const overview = película.overview?.toLowerCase() || ""; // si no existe, usamos string vacío
+    const géneros =
+      película.genres?.map((g) => g.name?.toLowerCase()).join(" ") || ""; // unimos todos los nombres de géneros en un solo string
+
     // Retornamos true si alguna de las propiedades contiene el término buscado
-    
-    return título.includes(terminoLower) || 
-           overview.includes(terminoLower) || 
-           géneros.includes(terminoLower);
+
+    return (
+      título.includes(terminoLower) ||
+      overview.includes(terminoLower) ||
+      géneros.includes(terminoLower)
+    );
   });
-  
+
   // Mostramos los resultados filtrados en pantalla
   mostrarResultados(películasFiltradas);
 }
@@ -59,35 +62,44 @@ function buscarPelículas(termino) {
 
 // Recibe las películas filtradas y arma la lista en HTML
 function mostrarResultados(películasFiltradas) {
-  const lista = document.getElementById('lista');
-  
+  const lista = document.getElementById("lista");
+
   // Si no hay resultados, mostramos mensaje de error
   if (películasFiltradas.length === 0) {
-    lista.innerHTML = '<li class="list-group-item bg-dark text-white text-center">No se encontraron resultados</li>';
+    lista.innerHTML =
+      '<li class="list-group-item bg-dark text-white text-center">No se encontraron resultados</li>';
     return;
   }
-  
-  let html = '';
-  
+
+  let html = "";
+
   // Por cada película, armamos una tarjeta resumida
   películasFiltradas.forEach((película, index) => {
-    const año = película.release_date ? new Date(película.release_date).getFullYear() : 'N/A'; // extraemos solo el año
-    const géneros = película.genres ? película.genres.map(g => g.name).join(', ') : ''; // unimos los nombres de géneros
+    const año = película.release_date
+      ? new Date(película.release_date).getFullYear()
+      : "N/A"; // extraemos solo el año
+    const géneros = película.genres
+      ? película.genres.map((g) => g.name).join(", ")
+      : ""; // unimos los nombres de géneros
     const estrellas = generarEstrellas(película.vote_average || 0); // función para generar estrellas
-    const duración = película.runtime ? `${película.runtime} min` : 'N/A'; // duración en minutos
-    const presupuesto = película.budget ? `$${película.budget.toLocaleString()}` : 'N/A'; // formato con comas
-    const ganancias = película.revenue ? `$${película.revenue.toLocaleString()}` : 'N/A'; // formato con comas
-    
+    const duración = película.runtime ? `${película.runtime} min` : "N/A"; // duración en minutos
+    const presupuesto = película.budget
+      ? `$${película.budget.toLocaleString()}`
+      : "N/A"; // formato con comas
+    const ganancias = película.revenue
+      ? `$${película.revenue.toLocaleString()}`
+      : "N/A"; // formato con comas
+
     // Armamos el HTML de cada ítem
-    
+
     html += `
       <li class="list-group-item bg-dark text-white border-secondary movie-item" 
           data-movie-index="${index}" 
           style="cursor: pointer;">
         <div class="row">
           <div class="col-md-8">
-            <h5 class="mb-1">${película.title || 'Sin título'}</h5>
-            <p class="mb-1">${película.tagline || ''}</p>
+            <h5 class="mb-1">${película.title || "Sin título"}</h5>
+            <p class="mb-1">${película.tagline || ""}</p>
             <small class="text-muted">${géneros}</small>
           </div>
           <div class="col-md-4 text-end">
@@ -111,93 +123,97 @@ function mostrarResultados(películasFiltradas) {
       </li>
     `;
   });
-  
+
   // Insertamos todo el HTML generado en la lista
   lista.innerHTML = html;
-  
+
   // Asociamos eventos click a cada ítem para mostrar detalles extendidos
-  document.querySelectorAll('.movie-item').forEach((item, index) => {
-    item.addEventListener('click', function() {
+  document.querySelectorAll(".movie-item").forEach((item, index) => {
+    item.addEventListener("click", function () {
       mostrarDetallesPelicula(películasFiltradas[index]);
     });
   });
 }
-
 
 // 4. FUNCIÓN PARA GENERAR ESTRELLAS
 
 // Convierte el "vote_average" (0 a 10) en 5 estrellas
 function generarEstrellas(voteAverage) {
   const estrellas = Math.round(voteAverage / 2); // Escalamos de 10 a 5
-  let estrellasHTML = '';
-  
-  for (let i = 1; i <= 5; i++) { // siempre mostramos 5 estrellas
-    if (i <= estrellas) { // si la estrella actual es menor o igual al número de estrellas llenas
+  let estrellasHTML = "";
+
+  for (let i = 1; i <= 5; i++) {
+    // siempre mostramos 5 estrellas
+    if (i <= estrellas) {
+      // si la estrella actual es menor o igual al número de estrellas llenas
       estrellasHTML += '<span class="fa fa-star checked"></span>'; // estrella llena
     } else {
       estrellasHTML += '<span class="fa fa-star"></span>'; // estrella vacía
     }
   }
-  
+
   return estrellasHTML;
 }
-
 
 // 5. FUNCIÓN PARA MOSTRAR DETALLES DE PELÍCULA
 
 // Recibe una película y muestra sus detalles en un offcanvas o modal (ventanas para mostrar contenido adicional)
 function mostrarDetallesPelicula(película) {
-  document.getElementById('movieTitle').textContent = película.title || 'Sin título'; 
-  document.getElementById('movieOverview').textContent = película.overview || 'Sin descripción disponible';
-  
-  const géneros = película.genres ? película.genres.map(g => g.name).join(', ') : 'Sin géneros';
-  document.getElementById('movieGenres').innerHTML = `<strong>Géneros:</strong> ${géneros}`;
-  
-  // Mostramos el contenedor offcanvas de detalles
-  document.getElementById('offcanvas-container').style.display = 'block';
-}
+  document.getElementById("movieTitle").textContent =
+    película.title || "Sin título";
+  document.getElementById("movieOverview").textContent =
+    película.overview || "Sin descripción disponible";
 
+  const géneros = película.genres
+    ? película.genres.map((g) => g.name).join(", ")
+    : "Sin géneros";
+  document.getElementById(
+    "movieGenres"
+  ).innerHTML = `<strong>Géneros:</strong> ${géneros}`;
+
+  // Mostramos el contenedor offcanvas de detalles
+  document.getElementById("offcanvas-container").style.display = "block";
+}
 
 // 6. FUNCIÓN PARA CERRAR DETALLES
 
 function cerrarDetalles() {
-  document.getElementById('offcanvas-container').style.display = 'none';
+  document.getElementById("offcanvas-container").style.display = "none";
 }
-
 
 // 7. EVENT LISTENERS PRINCIPALES
 
-document.addEventListener("DOMContentLoaded", function(){
-  
+document.addEventListener("DOMContentLoaded", function () {
   // Cuando hago clic en el botón Buscar
-  const btnBuscar = document.getElementById("btnBuscar");
+  const btnBuscar = document.getElementById("btnBuscar"); // botón para iniciar la búsqueda
   if (btnBuscar) {
-    btnBuscar.addEventListener("click", function(){
-      let input = document.getElementById("inputBuscar").value;
+    btnBuscar.addEventListener("click", function () {
+      let input = document.getElementById("inputBuscar").value; // obtenemos el valor del input
       console.log("Buscando:", input);
-      
+
       if (películas.length === 0) {
-        alert('Los datos aún se están cargando...');
+        // si las películas aún no se han cargado
+        alert("Los datos aún se están cargando...");
         return;
       }
-      
+
       buscarPelículas(input);
     });
   }
-  
+
   // También permitimos buscar apretando la tecla Enter
-  const inputBuscar = document.getElementById("inputBuscar");
-  if (inputBuscar) {
-    inputBuscar.addEventListener("keypress", function(e){
-      if (e.key === 'Enter') {
+  const inputBuscar = document.getElementById("inputBuscar"); 
+  if (inputBuscar) { 
+    inputBuscar.addEventListener("keypress", function (e) {
+      if (e.key === "Enter") {
         let input = this.value;
         console.log("Buscando con Enter:", input);
-        
+
         if (películas.length === 0) {
-          alert('Los datos aún se están cargando...');
+          alert("Los datos aún se están cargando...");
           return;
         }
-        
+
         buscarPelículas(input);
       }
     });
