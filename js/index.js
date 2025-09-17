@@ -1,12 +1,13 @@
 // Creamos un array vacío donde se guardarán todas las películas
+
 let películas = [];
 
-// ==============================
 // 1. CARGAR LOS DATOS Y GUARDARLOS
-// ==============================
+
+// Usamos fetch para obtener los datos desde la URL
 fetch("https://japceibal.github.io/japflix_api/movies-data.json")
   .then(response => {
-    // Si hubo un error en la respuesta (ej: 404), lanzamos excepción
+    // Si hubo un error en la respuesta (ej: 404), manejamos el error
     if(!response.ok) {
         throw new Error('HTTP error ' + response.status);
     }
@@ -24,37 +25,38 @@ fetch("https://japceibal.github.io/japflix_api/movies-data.json")
     console.error('Error al obtener los datos:', error);
   });
 
-// ==============================
+
 // 2. FUNCIÓN PARA BUSCAR PELÍCULAS
-// ==============================
-// Recibe un término (string) y filtra las películas que lo contengan
-function buscarPelículas(término) {
-  if (!término || término.trim() === '') {
+
+// Recibe un termino (string) y filtra las películas que lo contengan
+function buscarPelículas(termino) {
+  if (!termino || termino.trim() === '') {
     // Si el input está vacío, borramos la lista
     document.getElementById('lista').innerHTML = '';
     return;
   }
   
-  const términoLower = término.toLowerCase(); // pasamos a minúsculas para comparar
+  const terminoLower = termino.toLowerCase(); // pasamos a minúsculas para comparar
 
   // Filtramos películas por coincidencias en: título, overview o géneros
-  const películasFiltradas = películas.filter(película => {
-    const título = película.title?.toLowerCase() || '';
-    const overview = película.overview?.toLowerCase() || '';
-    const géneros = película.genres?.map(g => g.name?.toLowerCase()).join(' ') || '';
+  const películasFiltradas = películas.filter(película => { // usamos optional chaining (?.) para evitar errores si alguna propiedad no existe
+    const título = película.title?.toLowerCase() || ''; // si no existe, usamos string vacío
+    const overview = película.overview?.toLowerCase() || ''; // si no existe, usamos string vacío
+    const géneros = película.genres?.map(g => g.name?.toLowerCase()).join(' ') || ''; // unimos todos los nombres de géneros en un solo string
     
-    return título.includes(términoLower) || 
-           overview.includes(términoLower) || 
-           géneros.includes(términoLower);
+    // Retornamos true si alguna de las propiedades contiene el término buscado
+    
+    return título.includes(terminoLower) || 
+           overview.includes(terminoLower) || 
+           géneros.includes(terminoLower);
   });
   
   // Mostramos los resultados filtrados en pantalla
   mostrarResultados(películasFiltradas);
 }
 
-// ==============================
 // 3. FUNCIÓN PARA MOSTRAR RESULTADOS
-// ==============================
+
 // Recibe las películas filtradas y arma la lista en HTML
 function mostrarResultados(películasFiltradas) {
   const lista = document.getElementById('lista');
@@ -69,12 +71,14 @@ function mostrarResultados(películasFiltradas) {
   
   // Por cada película, armamos una tarjeta resumida
   películasFiltradas.forEach((película, index) => {
-    const año = película.release_date ? new Date(película.release_date).getFullYear() : 'N/A';
-    const géneros = película.genres ? película.genres.map(g => g.name).join(', ') : '';
-    const estrellas = generarEstrellas(película.vote_average || 0);
-    const duración = película.runtime ? `${película.runtime} min` : 'N/A';
-    const presupuesto = película.budget ? `$${película.budget.toLocaleString()}` : 'N/A';
-    const ganancias = película.revenue ? `$${película.revenue.toLocaleString()}` : 'N/A';
+    const año = película.release_date ? new Date(película.release_date).getFullYear() : 'N/A'; // extraemos solo el año
+    const géneros = película.genres ? película.genres.map(g => g.name).join(', ') : ''; // unimos los nombres de géneros
+    const estrellas = generarEstrellas(película.vote_average || 0); // función para generar estrellas
+    const duración = película.runtime ? `${película.runtime} min` : 'N/A'; // duración en minutos
+    const presupuesto = película.budget ? `$${película.budget.toLocaleString()}` : 'N/A'; // formato con comas
+    const ganancias = película.revenue ? `$${película.revenue.toLocaleString()}` : 'N/A'; // formato con comas
+    
+    // Armamos el HTML de cada ítem
     
     html += `
       <li class="list-group-item bg-dark text-white border-secondary movie-item" 
@@ -119,16 +123,16 @@ function mostrarResultados(películasFiltradas) {
   });
 }
 
-// ==============================
+
 // 4. FUNCIÓN PARA GENERAR ESTRELLAS
-// ==============================
+
 // Convierte el "vote_average" (0 a 10) en 5 estrellas
 function generarEstrellas(voteAverage) {
   const estrellas = Math.round(voteAverage / 2); // Escalamos de 10 a 5
   let estrellasHTML = '';
   
-  for (let i = 1; i <= 5; i++) {
-    if (i <= estrellas) {
+  for (let i = 1; i <= 5; i++) { // siempre mostramos 5 estrellas
+    if (i <= estrellas) { // si la estrella actual es menor o igual al número de estrellas llenas
       estrellasHTML += '<span class="fa fa-star checked"></span>'; // estrella llena
     } else {
       estrellasHTML += '<span class="fa fa-star"></span>'; // estrella vacía
@@ -138,30 +142,31 @@ function generarEstrellas(voteAverage) {
   return estrellasHTML;
 }
 
-// ==============================
+
 // 5. FUNCIÓN PARA MOSTRAR DETALLES DE PELÍCULA
-// ==============================
+
+// Recibe una película y muestra sus detalles en un offcanvas o modal (ventanas para mostrar contenido adicional)
 function mostrarDetallesPelicula(película) {
-  document.getElementById('movieTitle').textContent = película.title || 'Sin título';
+  document.getElementById('movieTitle').textContent = película.title || 'Sin título'; 
   document.getElementById('movieOverview').textContent = película.overview || 'Sin descripción disponible';
   
   const géneros = película.genres ? película.genres.map(g => g.name).join(', ') : 'Sin géneros';
   document.getElementById('movieGenres').innerHTML = `<strong>Géneros:</strong> ${géneros}`;
   
-  // Mostramos el contenedor de detalles (puede ser un offcanvas o modal)
+  // Mostramos el contenedor offcanvas de detalles
   document.getElementById('offcanvas-container').style.display = 'block';
 }
 
-// ==============================
+
 // 6. FUNCIÓN PARA CERRAR DETALLES
-// ==============================
+
 function cerrarDetalles() {
   document.getElementById('offcanvas-container').style.display = 'none';
 }
 
-// ==============================
+
 // 7. EVENT LISTENERS PRINCIPALES
-// ==============================
+
 document.addEventListener("DOMContentLoaded", function(){
   
   // Cuando hago clic en el botón Buscar
